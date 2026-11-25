@@ -59,6 +59,7 @@ class LocationGuardEngine(
     private var countdownJob: Job? = null
     private var adaptiveWatcherJob: Job? = null
     private var screenOffJob: Job? = null
+    private var reEvaluateJob: Job? = null
 
     fun start() {
         if (isStarted) return
@@ -117,6 +118,19 @@ class LocationGuardEngine(
     fun onLocationModeChanged(enabled: Boolean) {
         val wasEnabled = _state.value.isLocationEnabled
         _state.update { it.copy(isLocationEnabled = enabled) }
+        if (!enabled) {
+            stopAllTimers()
+            _state.update {
+                it.copy(
+                    phase = GuardPhase.IDLE_LOCATION_OFF,
+                    remainingSeconds = 0
+                )
+            }
+        } else if (!wasEnabled) {
+            // Fresh Location ON transition: guarantee countdown resets to full default timeout
+            countdownJob?.cancel()
+            countdownJob = null
+        }
         if (wasEnabled != enabled) {
             logRepository.add(
                 LogCategory.INFO,
@@ -152,9 +166,16 @@ class LocationGuardEngine(
     }
 
     fun turnOffNow() {
+        stopAllTimers()
+        _state.update {
+            it.copy(
+                phase = GuardPhase.IDLE_LOCATION_OFF,
+                remainingSeconds = 0
+            )
+        }
         scope.launch {
-            stopAllTimers()
             val ok = privilegeManager.setLocationEnabled(false)
+            stopAllTimers()
             if (ok) {
                 preferences.recordAutoDisable()
                 logRepository.add(
@@ -214,7 +235,8 @@ class LocationGuardEngine(
             return
         }
 
-        scope.launch {
+        reEvaluateJob?.cancel()
+        reEvaluateJob = scope.launch {
             val fgPkg = foregroundDetector.getCurrentForegroundPackage()
             _state.update { it.copy(currentForegroundApp = fgPkg) }
 
@@ -408,6 +430,8 @@ class LocationGuardEngine(
     }
 
     private fun stopAllTimers() {
+        reEvaluateJob?.cancel()
+        reEvaluateJob = null
         countdownJob?.cancel()
         countdownJob = null
         screenOffJob?.cancel()
