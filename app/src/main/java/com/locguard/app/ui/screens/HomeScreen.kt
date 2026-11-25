@@ -93,34 +93,22 @@ fun HomeScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header + Master Toggle
+        // Header
         item {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 4.dp)
             ) {
-                Column {
-                    Text(
-                        text = "LocGuard",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "${settings.whitelistedPackages.size} whitelisted apps • ${settings.autoDisableCount} auto-offs",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Switch(
-                    checked = settings.guardEnabled,
-                    onCheckedChange = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onToggleGuard(it)
-                    }
+                Text(
+                    text = "LocGuard",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = "${settings.whitelistedPackages.size} whitelisted apps • ${settings.autoDisableCount} auto-offs",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

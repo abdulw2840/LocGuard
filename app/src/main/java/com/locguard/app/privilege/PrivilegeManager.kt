@@ -120,7 +120,19 @@ class PrivilegeManager(private val context: Context) {
     }
 
     suspend fun refreshStatus() = withContext(Dispatchers.IO) {
-        val rootGranted = runCatching { Shell.getShell().isRoot }.getOrDefault(false)
+        val cached = Shell.getCachedShell()
+        if (cached != null && !cached.isRoot) {
+            runCatching { cached.close() }
+        }
+        var rootGranted = runCatching { Shell.getShell().isRoot }.getOrDefault(false)
+        if (!rootGranted) {
+            // Fallback direct su check (handles KernelSU / APatch / delayed prompt grants)
+            rootGranted = checkDirectSu()
+            if (rootGranted) {
+                runCatching { Shell.getCachedShell()?.close() }
+                rootGranted = runCatching { Shell.getShell().isRoot }.getOrDefault(true)
+            }
+        }
         val binderAlive = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
         val shizukuGranted = if (binderAlive) {
             runCatching {
@@ -282,6 +294,15 @@ class PrivilegeManager(private val context: Context) {
             context.packageName
         )
         return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun checkDirectSu(): Boolean {
+        return runCatching {
+            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "id"))
+            val out = process.inputStream.bufferedReader().use { it.readText() }
+            val code = process.waitFor()
+            code == 0 && out.contains("uid=0")
+        }.getOrDefault(false)
     }
 
     private fun parsePackageFromDumpsys(line: String): String? {

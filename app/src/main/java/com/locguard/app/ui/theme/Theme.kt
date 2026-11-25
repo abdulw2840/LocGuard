@@ -3,6 +3,7 @@ package com.locguard.app.ui.theme
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -102,10 +103,16 @@ fun LocGuardTheme(
         )
     }
 
-    CompositionLocalProvider(LocalGlassPalette provides glassPalette) {
+    CompositionLocalProvider(
+        LocalGlassPalette provides glassPalette,
+        LocalContentColor provides colorScheme.onBackground
+    ) {
         MaterialTheme(
-            colorScheme = colorScheme,
-            content = content
-        )
+            colorScheme = colorScheme
+        ) {
+            CompositionLocalProvider(LocalContentColor provides colorScheme.onBackground) {
+                content()
+            }
+        }
     }
 }
