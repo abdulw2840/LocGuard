@@ -70,6 +70,7 @@ fun HomeScreen(
     onToggleGuard: (Boolean) -> Unit,
     onToggleAutoEnable: (Boolean) -> Unit,
     onToggleScreenOff: (Boolean) -> Unit,
+    onScreenOffGraceChange: (Int) -> Unit,
     onToggleCountdownNotif: (Boolean) -> Unit,
     onTimeoutChange: (Int) -> Unit,
     onPrivilegePrefChange: (PrivilegePreference) -> Unit,
@@ -78,7 +79,6 @@ fun HomeScreen(
     onRefreshPrivileges: () -> Unit,
     onRequestShizuku: () -> Unit,
     onAutoGrantPermissions: () -> Unit,
-    onOpenAccessibility: () -> Unit,
     contentPadding: PaddingValues
 ) {
     val haptic = LocalHapticFeedback.current
@@ -209,7 +209,7 @@ fun HomeScreen(
                     isHealthy = privilegeStatus.activeBackend != ActiveBackend.NONE
                 )
                 StatusPillRow(
-                    label = "Root (libsu)",
+                    label = "Root (KSU / Magisk)",
                     value = if (privilegeStatus.isRootAvailable) "Granted" else "Not Detected",
                     isHealthy = privilegeStatus.isRootAvailable
                 )
@@ -231,12 +231,6 @@ fun HomeScreen(
                     value = if (privilegeStatus.hasUsageStatsPermission) "Granted" else "Missing",
                     isHealthy = privilegeStatus.hasUsageStatsPermission
                 )
-                StatusPillRow(
-                    label = "Zero-Poll Watcher (A11y)",
-                    value = if (runtimeState.isAccessibilityActive) "Active (0% Poll)" else "Optional • Tap to Enable",
-                    isHealthy = runtimeState.isAccessibilityActive,
-                    onClick = onOpenAccessibility
-                )
 
                 if (!privilegeStatus.hasUsageStatsPermission && privilegeStatus.activeBackend != ActiveBackend.NONE) {
                     Spacer(modifier = Modifier.height(10.dp))
@@ -256,7 +250,7 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Backend Priority",
+                    text = "Privilege Method",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -355,13 +349,56 @@ fun HomeScreen(
 
                 SettingToggleRow(
                     title = "Auto-Off on Screen Off",
-                    subtitle = "Pause watchers immediately & close location 5s after screen locks",
+                    subtitle = "Pause normal timer & close location after screen locks",
                     checked = settings.autoDisableOnScreenOff,
                     onCheckedChange = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onToggleScreenOff(it)
                     }
                 )
+
+                AnimatedVisibility(
+                    visible = settings.autoDisableOnScreenOff,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column(modifier = Modifier.padding(top = 10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Screen-Off Delay",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = formatDuration(settings.screenOffGraceSeconds),
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Slider(
+                            value = settings.screenOffGraceSeconds.toFloat(),
+                            onValueChange = { onScreenOffGraceChange(it.toInt()) },
+                            valueRange = 5f..120f,
+                            steps = 0
+                        )
+                        val screenPresets = listOf(5, 15, 30, 60)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            screenPresets.forEach { sec ->
+                                FilterChip(
+                                    selected = settings.screenOffGraceSeconds == sec,
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        onScreenOffGraceChange(sec)
+                                    },
+                                    label = { Text(formatDuration(sec)) }
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(10.dp))
 

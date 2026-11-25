@@ -16,9 +16,8 @@ import kotlinx.coroutines.flow.map
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "locguard_prefs")
 
 enum class PrivilegePreference(val label: String) {
-    AUTO("Auto (Root → Shizuku)"),
-    ROOT("Root Only (libsu)"),
-    SHIZUKU("Shizuku Only")
+    ROOT("Root (KSU / Magisk)"),
+    SHIZUKU("Shizuku")
 }
 
 data class GuardSettings(
@@ -27,7 +26,7 @@ data class GuardSettings(
     val autoDisableOnScreenOff: Boolean = true,
     val screenOffGraceSeconds: Int = 5,
     val timeoutSeconds: Int = 60,
-    val privilegePreference: PrivilegePreference = PrivilegePreference.AUTO,
+    val privilegePreference: PrivilegePreference = PrivilegePreference.ROOT,
     val showCountdownNotification: Boolean = true,
     val whitelistedPackages: Set<String> = emptySet(),
     val autoDisableCount: Int = 0,
@@ -50,15 +49,15 @@ class GuardPreferences(private val context: Context) {
     }
 
     val settingsFlow: Flow<GuardSettings> = context.dataStore.data.map { prefs ->
-        val prefName = prefs[Keys.PRIVILEGE_PREF] ?: PrivilegePreference.AUTO.name
+        val prefName = prefs[Keys.PRIVILEGE_PREF] ?: PrivilegePreference.ROOT.name
         val privilegePref = runCatching { PrivilegePreference.valueOf(prefName) }
-            .getOrDefault(PrivilegePreference.AUTO)
+            .getOrDefault(PrivilegePreference.ROOT)
 
         GuardSettings(
             guardEnabled = prefs[Keys.GUARD_ENABLED] ?: true,
             autoEnableForWhitelisted = prefs[Keys.AUTO_ENABLE_WHITELISTED] ?: true,
             autoDisableOnScreenOff = prefs[Keys.AUTO_DISABLE_SCREEN_OFF] ?: true,
-            screenOffGraceSeconds = prefs[Keys.SCREEN_OFF_GRACE_SECONDS] ?: 5,
+            screenOffGraceSeconds = (prefs[Keys.SCREEN_OFF_GRACE_SECONDS] ?: 5).coerceIn(5, 300),
             timeoutSeconds = (prefs[Keys.TIMEOUT_SECONDS] ?: 60).coerceIn(5, 1800),
             privilegePreference = privilegePref,
             showCountdownNotification = prefs[Keys.SHOW_COUNTDOWN_NOTIF] ?: true,
@@ -78,6 +77,10 @@ class GuardPreferences(private val context: Context) {
 
     suspend fun setAutoDisableOnScreenOff(enabled: Boolean) {
         context.dataStore.edit { it[Keys.AUTO_DISABLE_SCREEN_OFF] = enabled }
+    }
+
+    suspend fun setScreenOffGraceSeconds(seconds: Int) {
+        context.dataStore.edit { it[Keys.SCREEN_OFF_GRACE_SECONDS] = seconds.coerceIn(5, 300) }
     }
 
     suspend fun setTimeoutSeconds(seconds: Int) {

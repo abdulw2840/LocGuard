@@ -47,7 +47,7 @@ class PrivilegeManager(private val context: Context) {
     private var shizukuService: IPrivilegedService? = null
 
     @Volatile
-    private var currentPreference: PrivilegePreference = PrivilegePreference.AUTO
+    private var currentPreference: PrivilegePreference = PrivilegePreference.ROOT
 
     private val userServiceArgs = Shizuku.UserServiceArgs(
         ComponentName(BuildConfig.APPLICATION_ID, ShizukuUserService::class.java.name)
@@ -201,12 +201,6 @@ class PrivilegeManager(private val context: Context) {
                 else -> ActiveBackend.NONE
             }
             PrivilegePreference.SHIZUKU -> when {
-                s.isShizukuServiceBound -> ActiveBackend.SHIZUKU
-                s.hasWriteSecureSettings -> ActiveBackend.WRITE_SECURE
-                else -> ActiveBackend.NONE
-            }
-            PrivilegePreference.AUTO -> when {
-                s.isRootAvailable -> ActiveBackend.ROOT
                 s.isShizukuServiceBound -> ActiveBackend.SHIZUKU
                 s.hasWriteSecureSettings -> ActiveBackend.WRITE_SECURE
                 else -> ActiveBackend.NONE

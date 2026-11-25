@@ -99,6 +99,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { app.preferences.setAutoDisableOnScreenOff(enabled) }
     }
 
+    fun setScreenOffGraceSeconds(seconds: Int) {
+        viewModelScope.launch { app.preferences.setScreenOffGraceSeconds(seconds) }
+    }
+
     fun setTimeoutSeconds(seconds: Int) {
         viewModelScope.launch { app.preferences.setTimeoutSeconds(seconds) }
     }

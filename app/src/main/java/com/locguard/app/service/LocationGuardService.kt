@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class LocationGuardService : Service() {
@@ -83,13 +84,21 @@ class LocationGuardService : Service() {
                 app.guardEngine.state,
                 app.preferences.settingsFlow
             ) { runtime, settings ->
-                runtime to settings.showCountdownNotification
-            }.collect { (runtime, showCountdown) ->
-                notificationManager.notify(
-                    NOTIFICATION_ID,
-                    buildNotification(runtime, showCountdown)
-                )
+                val showCountdown = settings.showCountdownNotification
+                if (showCountdown) {
+                    runtime to true
+                } else {
+                    // When disabled, collapse to a static minimal notification (no per-second updates)
+                    GuardRuntimeState(phase = GuardPhase.IDLE_LOCATION_OFF) to false
+                }
             }
+                .distinctUntilChanged()
+                .collect { (runtime, showCountdown) ->
+                    notificationManager.notify(
+                        NOTIFICATION_ID,
+                        buildNotification(runtime, showCountdown)
+                    )
+                }
         }
     }
 
@@ -134,6 +143,19 @@ class LocationGuardService : Service() {
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
+
+        if (!showCountdown) {
+            return NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_location_shield)
+                .setContentTitle("LocGuard Active")
+                .setContentText("Background protection running")
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setSilent(true)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setContentIntent(openAppIntent)
+                .build()
+        }
 
         val (title, text) = when (state.phase) {
             GuardPhase.IDLE_LOCATION_OFF ->

@@ -126,6 +126,7 @@ private fun LocGuardRoot(viewModel: MainViewModel) {
                         onToggleGuard = viewModel::setGuardEnabled,
                         onToggleAutoEnable = viewModel::setAutoEnableForWhitelisted,
                         onToggleScreenOff = viewModel::setAutoDisableOnScreenOff,
+                        onScreenOffGraceChange = viewModel::setScreenOffGraceSeconds,
                         onToggleCountdownNotif = viewModel::setShowCountdownNotification,
                         onTimeoutChange = viewModel::setTimeoutSeconds,
                         onPrivilegePrefChange = viewModel::setPrivilegePreference,
@@ -134,7 +135,6 @@ private fun LocGuardRoot(viewModel: MainViewModel) {
                         onRefreshPrivileges = viewModel::refreshPrivileges,
                         onRequestShizuku = viewModel::requestShizukuPermission,
                         onAutoGrantPermissions = viewModel::grantPermissionsViaPrivilege,
-                        onOpenAccessibility = viewModel::openAccessibilitySettings,
                         contentPadding = screenPadding
                     )
                     1 -> AppsScreen(

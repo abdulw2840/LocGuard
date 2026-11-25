@@ -61,6 +61,11 @@ class LocationGuardEngine(
     private var screenOffJob: Job? = null
     private var reEvaluateJob: Job? = null
 
+    @Volatile
+    private var pausedRemainingSeconds: Int? = null
+    @Volatile
+    private var pausedTotalSeconds: Int? = null
+
     fun start() {
         if (isStarted) return
         isStarted = true
@@ -155,8 +160,16 @@ class LocationGuardEngine(
             adaptiveWatcherJob = null
 
             val settings = currentSettings
-            if (settings.guardEnabled && settings.autoDisableOnScreenOff && _state.value.isLocationEnabled) {
-                scheduleScreenOffDisable(settings.screenOffGraceSeconds)
+            if (settings.guardEnabled && _state.value.isLocationEnabled) {
+                if (_state.value.phase == GuardPhase.COUNTING_DOWN && _state.value.remainingSeconds > 0) {
+                    pausedRemainingSeconds = _state.value.remainingSeconds
+                    pausedTotalSeconds = _state.value.totalCountdownSeconds
+                    countdownJob?.cancel()
+                    countdownJob = null
+                }
+                if (settings.autoDisableOnScreenOff) {
+                    scheduleScreenOffDisable(settings.screenOffGraceSeconds)
+                }
             }
         } else {
             screenOffJob?.cancel()
@@ -242,6 +255,8 @@ class LocationGuardEngine(
 
             val isWhitelisted = fgPkg != null && settings.whitelistedPackages.contains(fgPkg)
             if (isWhitelisted) {
+                pausedRemainingSeconds = null
+                pausedTotalSeconds = null
                 countdownJob?.cancel()
                 countdownJob = null
                 _state.update {
@@ -251,7 +266,13 @@ class LocationGuardEngine(
                     )
                 }
             } else {
-                if (countdownJob?.isActive != true) {
+                val resumeSec = pausedRemainingSeconds
+                val resumeTotal = pausedTotalSeconds ?: settings.timeoutSeconds
+                pausedRemainingSeconds = null
+                pausedTotalSeconds = null
+                if (resumeSec != null && resumeSec > 0) {
+                    startCountdown(resumeSec, resumeTotal)
+                } else if (countdownJob?.isActive != true) {
                     startCountdown(settings.timeoutSeconds, settings.timeoutSeconds)
                 }
             }
@@ -370,8 +391,17 @@ class LocationGuardEngine(
             )
         }
         screenOffJob = scope.launch {
-            delay(graceSeconds * 1000L)
+            var remaining = graceSeconds
+            while (remaining > 0 && isActive) {
+                delay(1000L)
+                remaining--
+                if (!_state.value.isScreenOn) {
+                    _state.update { it.copy(remainingSeconds = remaining) }
+                }
+            }
             if (!isActive || _state.value.isScreenOn || !currentSettings.guardEnabled) return@launch
+            pausedRemainingSeconds = null
+            pausedTotalSeconds = null
             if (privilegeManager.isLocationEnabledSystem()) {
                 val ok = privilegeManager.setLocationEnabled(false)
                 if (ok) {
@@ -430,6 +460,8 @@ class LocationGuardEngine(
     }
 
     private fun stopAllTimers() {
+        pausedRemainingSeconds = null
+        pausedTotalSeconds = null
         reEvaluateJob?.cancel()
         reEvaluateJob = null
         countdownJob?.cancel()
