@@ -144,21 +144,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     val label = runCatching { pm.getApplicationLabel(info).toString() }
                         .getOrDefault(info.packageName)
-                    val icon = runCatching {
-                        pm.getApplicationIcon(info).toBitmap(96, 96).asImageBitmap()
-                    }.getOrNull()
 
                     InstalledAppInfo(
                         packageName = info.packageName,
                         label = label,
                         isSystem = isSystem,
-                        icon = icon
+                        icon = null // load icons lazily below
                     )
                 }
                 .sortedBy { it.label.lowercase() }
 
+            // Show list immediately without icons
             _installedApps.value = apps
             _isLoadingApps.value = false
+
+            // Load icons in background batches of 20
+            val withIcons = apps.toMutableList()
+            for (i in withIcons.indices) {
+                val info = withIcons[i]
+                if (info.icon == null) {
+                    val icon = runCatching {
+                        val appInfo = pm.getApplicationInfo(info.packageName, 0)
+                        pm.getApplicationIcon(appInfo).toBitmap(72, 72).asImageBitmap()
+                    }.getOrNull()
+                    withIcons[i] = info.copy(icon = icon)
+                }
+                if ((i + 1) % 20 == 0) {
+                    _installedApps.value = withIcons.toList()
+                }
+            }
+            _installedApps.value = withIcons.toList()
         }
     }
 }

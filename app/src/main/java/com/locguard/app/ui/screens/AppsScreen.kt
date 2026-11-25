@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,20 +66,22 @@ fun AppsScreen(
     var filter by remember { mutableStateOf(AppFilter.ALL) }
     val haptic = LocalHapticFeedback.current
 
-    val filteredApps = remember(apps, whitelistedPackages, query, filter) {
-        apps.filter { app ->
-            val matchesQuery = query.isBlank() ||
-                app.label.contains(query, ignoreCase = true) ||
-                app.packageName.contains(query, ignoreCase = true)
+    val filteredApps by remember(apps, whitelistedPackages, query, filter) {
+        derivedStateOf {
+            apps.filter { app ->
+                val matchesQuery = query.isBlank() ||
+                    app.label.contains(query, ignoreCase = true) ||
+                    app.packageName.contains(query, ignoreCase = true)
 
-            val matchesFilter = when (filter) {
-                AppFilter.ALL -> true
-                AppFilter.WHITELISTED -> whitelistedPackages.contains(app.packageName)
-                AppFilter.USER -> !app.isSystem
-                AppFilter.SYSTEM -> app.isSystem
-            }
-            matchesQuery && matchesFilter
-        }.sortedByDescending { whitelistedPackages.contains(it.packageName) }
+                val matchesFilter = when (filter) {
+                    AppFilter.ALL -> true
+                    AppFilter.WHITELISTED -> whitelistedPackages.contains(app.packageName)
+                    AppFilter.USER -> !app.isSystem
+                    AppFilter.SYSTEM -> app.isSystem
+                }
+                matchesQuery && matchesFilter
+            }.sortedByDescending { whitelistedPackages.contains(it.packageName) }
+        }
     }
 
     LazyColumn(
@@ -163,7 +166,10 @@ fun AppsScreen(
                 items = filteredApps,
                 key = { it.packageName }
             ) { appInfo ->
-                val isWhitelisted = whitelistedPackages.contains(appInfo.packageName)
+                val isWhitelisted = remember(appInfo.packageName, whitelistedPackages) {
+                    whitelistedPackages.contains(appInfo.packageName)
+                }
+                val iconShape = remember { RoundedCornerShape(12.dp) }
                 LiquidGlassCard(
                     cornerRadius = 22.dp,
                     contentPadding = 14.dp
@@ -183,7 +189,7 @@ fun AppsScreen(
                                     contentDescription = appInfo.label,
                                     modifier = Modifier
                                         .size(42.dp)
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .clip(iconShape)
                                 )
                             } else {
                                 Icon(
