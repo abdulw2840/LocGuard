@@ -80,13 +80,13 @@ fun LiquidAuroraBackground(modifier: Modifier = Modifier) {
 
     // Cache color values to avoid recomputing .copy() every frame
     val orb1Color = remember(palette) {
-        palette.orbPrimary.copy(alpha = if (palette.isDark) 0.28f else 0.22f)
+        palette.orbPrimary.copy(alpha = if (palette.isDark) 0.38f else 0.30f)
     }
     val orb2Color = remember(palette) {
-        palette.orbSecondary.copy(alpha = if (palette.isDark) 0.22f else 0.18f)
+        palette.orbSecondary.copy(alpha = if (palette.isDark) 0.32f else 0.24f)
     }
     val orb3Color = remember(palette) {
-        palette.orbTertiary.copy(alpha = if (palette.isDark) 0.20f else 0.16f)
+        palette.orbTertiary.copy(alpha = if (palette.isDark) 0.30f else 0.22f)
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "aurora")
@@ -180,7 +180,7 @@ fun LiquidGlassCard(
         Brush.verticalGradient(listOf(palette.surfaceTop, palette.surfaceBottom))
     }
     val borderBrush = remember(palette) {
-        Brush.linearGradient(listOf(palette.borderStart, palette.borderEnd))
+        Brush.linearGradient(listOf(palette.borderStart, palette.specularGlow, palette.borderEnd))
     }
     val onSurface = MaterialTheme.colorScheme.onSurface
 
@@ -378,7 +378,7 @@ fun LiquidGlassBottomBar(
         Brush.verticalGradient(listOf(palette.surfaceTop, palette.surfaceBottom))
     }
     val borderBrush = remember(palette) {
-        Brush.linearGradient(listOf(palette.borderStart, palette.borderEnd))
+        Brush.linearGradient(listOf(palette.borderStart, palette.specularGlow, palette.borderEnd))
     }
 
     Box(

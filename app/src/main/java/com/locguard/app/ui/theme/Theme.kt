@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 
 @Immutable
@@ -77,29 +78,33 @@ fun LocGuardTheme(
         if (darkTheme) FallbackDarkScheme else FallbackLightScheme
     }
 
+    val radiantPrimary = lerp(colorScheme.primary, Color(0xFF38BDF8), 0.35f)
+    val radiantSecondary = lerp(colorScheme.secondary, Color(0xFFA855F7), 0.38f)
+    val radiantTertiary = lerp(colorScheme.tertiary, Color(0xFF2DD4BF), 0.40f)
+
     val glassPalette = if (darkTheme) {
         GlassPalette(
             isDark = true,
-            surfaceTop = colorScheme.surfaceContainerHigh.copy(alpha = 0.56f),
-            surfaceBottom = colorScheme.surface.copy(alpha = 0.34f),
-            borderStart = Color.White.copy(alpha = 0.28f),
-            borderEnd = Color.White.copy(alpha = 0.05f),
-            specularGlow = colorScheme.primary.copy(alpha = 0.14f),
-            orbPrimary = colorScheme.primary,
-            orbSecondary = colorScheme.secondary,
-            orbTertiary = colorScheme.tertiary
+            surfaceTop = colorScheme.surfaceContainerHigh.copy(alpha = 0.58f),
+            surfaceBottom = colorScheme.surface.copy(alpha = 0.36f),
+            borderStart = radiantPrimary.copy(alpha = 0.48f),
+            borderEnd = radiantSecondary.copy(alpha = 0.22f),
+            specularGlow = Color.White.copy(alpha = 0.24f),
+            orbPrimary = radiantPrimary,
+            orbSecondary = radiantSecondary,
+            orbTertiary = radiantTertiary
         )
     } else {
         GlassPalette(
             isDark = false,
-            surfaceTop = Color.White.copy(alpha = 0.72f),
-            surfaceBottom = colorScheme.surfaceContainerHigh.copy(alpha = 0.50f),
-            borderStart = Color.White.copy(alpha = 0.85f),
-            borderEnd = colorScheme.primary.copy(alpha = 0.14f),
-            specularGlow = colorScheme.primary.copy(alpha = 0.10f),
-            orbPrimary = colorScheme.primary,
-            orbSecondary = colorScheme.secondary,
-            orbTertiary = colorScheme.tertiary
+            surfaceTop = Color.White.copy(alpha = 0.78f),
+            surfaceBottom = colorScheme.surfaceContainerHigh.copy(alpha = 0.54f),
+            borderStart = Color.White.copy(alpha = 0.92f),
+            borderEnd = radiantPrimary.copy(alpha = 0.32f),
+            specularGlow = radiantSecondary.copy(alpha = 0.18f),
+            orbPrimary = radiantPrimary,
+            orbSecondary = radiantSecondary,
+            orbTertiary = radiantTertiary
         )
     }
 

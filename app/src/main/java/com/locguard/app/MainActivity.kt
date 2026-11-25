@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.locguard.app.service.LocationGuardService
 import com.locguard.app.ui.MainViewModel
+import com.locguard.app.ui.components.FloatingLocBuddy
 import com.locguard.app.ui.components.LiquidAuroraBackground
 import com.locguard.app.ui.components.LiquidGlassBottomBar
 import com.locguard.app.ui.components.NavTabItem
@@ -153,6 +154,8 @@ private fun LocGuardRoot(viewModel: MainViewModel) {
                 }
             }
         }
+
+        FloatingLocBuddy(state = runtimeState)
 
         LiquidGlassBottomBar(
             items = navItems,
