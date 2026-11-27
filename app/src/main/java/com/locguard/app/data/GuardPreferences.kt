@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -30,7 +31,9 @@ data class GuardSettings(
     val showCountdownNotification: Boolean = true,
     val whitelistedPackages: Set<String> = emptySet(),
     val autoDisableCount: Int = 0,
-    val lastDisabledTimestamp: Long = 0L
+    val lastDisabledTimestamp: Long = 0L,
+    val themeName: String = "gruvbox",
+    val uiScale: Float = 1.0f
 )
 
 class GuardPreferences(private val context: Context) {
@@ -46,6 +49,8 @@ class GuardPreferences(private val context: Context) {
         val WHITELISTED_PACKAGES = stringSetPreferencesKey("whitelisted_packages")
         val AUTO_DISABLE_COUNT = intPreferencesKey("auto_disable_count")
         val LAST_DISABLED_TS = longPreferencesKey("last_disabled_ts")
+        val THEME_NAME = stringPreferencesKey("theme_name")
+        val UI_SCALE = floatPreferencesKey("ui_scale")
     }
 
     val settingsFlow: Flow<GuardSettings> = context.dataStore.data.map { prefs ->
@@ -63,7 +68,9 @@ class GuardPreferences(private val context: Context) {
             showCountdownNotification = prefs[Keys.SHOW_COUNTDOWN_NOTIF] ?: true,
             whitelistedPackages = prefs[Keys.WHITELISTED_PACKAGES] ?: emptySet(),
             autoDisableCount = prefs[Keys.AUTO_DISABLE_COUNT] ?: 0,
-            lastDisabledTimestamp = prefs[Keys.LAST_DISABLED_TS] ?: 0L
+            lastDisabledTimestamp = prefs[Keys.LAST_DISABLED_TS] ?: 0L,
+            themeName = prefs[Keys.THEME_NAME] ?: "gruvbox",
+            uiScale = (prefs[Keys.UI_SCALE] ?: 1.0f).coerceIn(0.85f, 1.3f)
         )
     }
 
@@ -110,5 +117,13 @@ class GuardPreferences(private val context: Context) {
             prefs[Keys.AUTO_DISABLE_COUNT] = (prefs[Keys.AUTO_DISABLE_COUNT] ?: 0) + 1
             prefs[Keys.LAST_DISABLED_TS] = System.currentTimeMillis()
         }
+    }
+
+    suspend fun setThemeName(themeName: String) {
+        context.dataStore.edit { it[Keys.THEME_NAME] = themeName }
+    }
+
+    suspend fun setUiScale(scale: Float) {
+        context.dataStore.edit { it[Keys.UI_SCALE] = scale.coerceIn(0.85f, 1.3f) }
     }
 }

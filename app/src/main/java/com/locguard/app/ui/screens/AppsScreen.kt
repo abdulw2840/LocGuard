@@ -1,6 +1,9 @@
 package com.locguard.app.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,19 +18,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -37,20 +36,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.locguard.app.ui.InstalledAppInfo
-import com.locguard.app.ui.components.LiquidGlassCard
+import com.locguard.app.ui.components.KaruiBox
+import com.locguard.app.ui.components.KaruiChip
+import com.locguard.app.ui.components.KaruiSwitch
+import com.locguard.app.ui.theme.LocalKaruiPalette
+import com.locguard.app.ui.theme.LocalUiScale
 
 private enum class AppFilter(val label: String) {
     ALL("All"),
     WHITELISTED("Whitelisted"),
-    USER("User Apps"),
+    USER("User"),
     SYSTEM("System")
 }
 
@@ -65,6 +73,8 @@ fun AppsScreen(
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(AppFilter.ALL) }
     val haptic = LocalHapticFeedback.current
+    val palette = LocalKaruiPalette.current
+    val scale = LocalUiScale.current
 
     val filteredApps by remember(apps, whitelistedPackages, query, filter) {
         derivedStateOf {
@@ -87,63 +97,87 @@ fun AppsScreen(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            top = contentPadding.calculateTopPadding() + 12.dp,
-            bottom = contentPadding.calculateBottomPadding() + 96.dp,
+            top = contentPadding.calculateTopPadding() + 8.dp,
+            bottom = contentPadding.calculateBottomPadding() + 32.dp,
             start = 16.dp,
             end = 16.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Column(modifier = Modifier.padding(horizontal = 4.dp)) {
-                Text(
-                    text = "Whitelisted Apps",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    text = "Location stays ON while using these apps, and auto-closes after you leave.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = "Location stays ON while using whitelisted apps, and auto-closes after you leave.",
+                color = palette.gray,
+                fontSize = (12 * scale).sp,
+                modifier = Modifier.padding(horizontal = 2.dp)
+            )
         }
 
         item {
-            LiquidGlassCard(contentPadding = 12.dp) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search apps or package name...") },
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (query.isNotEmpty()) {
-                            IconButton(onClick = { query = "" }) {
-                                Icon(Icons.Rounded.Clear, contentDescription = "Clear")
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(18.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.35f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.25f)
+            KaruiBox(title = "Filter & Search", contentPadding = 12.dp) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(palette.surface)
+                        .border(2.dp, palette.border, RectangleShape)
+                        .padding(horizontal = 10.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = null,
+                        tint = palette.gray,
+                        modifier = Modifier.size(18.dp)
                     )
-                )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (query.isEmpty()) {
+                            Text(
+                                text = "Search apps or package name...",
+                                color = palette.gray,
+                                fontSize = (14 * scale).sp
+                            )
+                        }
+                        BasicTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                color = palette.text,
+                                fontSize = (14 * scale).sp
+                            ),
+                            cursorBrush = SolidColor(palette.accent),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    if (query.isNotEmpty()) {
+                        IconButton(
+                            onClick = { query = "" },
+                            modifier = Modifier.size(22.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Clear,
+                                contentDescription = "Clear",
+                                tint = palette.accent,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     AppFilter.entries.forEach { item ->
-                        FilterChip(
+                        KaruiChip(
+                            label = item.label,
                             selected = filter == item,
-                            onClick = { filter = item },
-                            label = { Text(item.label, maxLines = 1) }
+                            onClick = { filter = item }
                         )
                     }
                 }
@@ -158,7 +192,7 @@ fun AppsScreen(
                         .padding(40.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = palette.accent)
                 }
             }
         } else {
@@ -169,61 +203,70 @@ fun AppsScreen(
                 val isWhitelisted = remember(appInfo.packageName, whitelistedPackages) {
                     whitelistedPackages.contains(appInfo.packageName)
                 }
-                val iconShape = remember { RoundedCornerShape(12.dp) }
-                LiquidGlassCard(
-                    cornerRadius = 22.dp,
-                    contentPadding = 14.dp
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(palette.bg)
+                        .drawBehind {
+                            drawLine(
+                                color = palette.border,
+                                start = Offset(0f, size.height),
+                                end = Offset(size.width, size.height),
+                                strokeWidth = 2.dp.toPx()
+                            )
+                        }
+                        .padding(vertical = (12 * scale).dp, horizontal = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (appInfo.icon != null) {
-                                Image(
-                                    bitmap = appInfo.icon,
-                                    contentDescription = appInfo.label,
-                                    modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(iconShape)
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Rounded.Apps,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(42.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.padding(end = 8.dp)) {
-                                Text(
-                                    text = appInfo.label,
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = appInfo.packageName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+                        if (appInfo.icon != null) {
+                            Image(
+                                bitmap = appInfo.icon,
+                                contentDescription = appInfo.label,
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .border(1.dp, palette.border, RectangleShape)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Rounded.Apps,
+                                contentDescription = null,
+                                tint = palette.gray,
+                                modifier = Modifier.size(38.dp)
+                            )
                         }
-
-                        Switch(
-                            checked = isWhitelisted,
-                            onCheckedChange = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onTogglePackage(appInfo.packageName)
-                            }
-                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.padding(end = 8.dp)) {
+                            Text(
+                                text = appInfo.label,
+                                color = if (isWhitelisted) palette.accent else palette.text,
+                                fontWeight = if (isWhitelisted) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = (15 * scale).sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = appInfo.packageName,
+                                color = palette.gray,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = (11 * scale).sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
+
+                    KaruiSwitch(
+                        checked = isWhitelisted,
+                        onCheckedChange = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onTogglePackage(appInfo.packageName)
+                        }
+                    )
                 }
             }
         }

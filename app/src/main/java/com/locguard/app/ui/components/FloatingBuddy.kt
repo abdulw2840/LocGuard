@@ -64,7 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.locguard.app.monitor.GuardPhase
 import com.locguard.app.monitor.GuardRuntimeState
-import com.locguard.app.ui.theme.LocalGlassPalette
+import androidx.compose.ui.graphics.RectangleShape
+import com.locguard.app.ui.theme.LocalKaruiPalette
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.hypot
@@ -84,7 +85,7 @@ fun FloatingLocBuddy(
     state: GuardRuntimeState,
     modifier: Modifier = Modifier
 ) {
-    val palette = LocalGlassPalette.current
+    val palette = LocalKaruiPalette.current
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
@@ -203,9 +204,9 @@ fun FloatingLocBuddy(
 
     val accentColor by animateColorAsState(
         targetValue = when (state.phase) {
-            GuardPhase.IDLE_LOCATION_OFF -> palette.orbTertiary
-            GuardPhase.PROTECTED_WHITELISTED -> palette.orbPrimary
-            GuardPhase.COUNTING_DOWN -> palette.orbSecondary
+            GuardPhase.IDLE_LOCATION_OFF -> palette.gray
+            GuardPhase.PROTECTED_WHITELISTED -> palette.accent
+            GuardPhase.COUNTING_DOWN -> palette.border
             GuardPhase.SCREEN_OFF_GRACE -> MaterialTheme.colorScheme.error
             GuardPhase.PAUSED -> MaterialTheme.colorScheme.outline
         },
@@ -300,12 +301,11 @@ fun FloatingLocBuddy(
                     Box(
                         modifier = Modifier
                             .padding(bottom = 2.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f))
+                            .background(palette.surface)
                             .border(
-                                width = 1.dp,
-                                color = accentColor.copy(alpha = 0.65f),
-                                shape = RoundedCornerShape(14.dp)
+                                width = 2.dp,
+                                color = palette.border,
+                                shape = RectangleShape
                             )
                             .padding(horizontal = 9.dp, vertical = 3.dp)
                     ) {

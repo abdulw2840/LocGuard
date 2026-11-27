@@ -1,121 +1,154 @@
 package com.locguard.app.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
+import android.app.Activity
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 
 @Immutable
-data class GlassPalette(
-    val isDark: Boolean,
-    val surfaceTop: Color,
-    val surfaceBottom: Color,
-    val borderStart: Color,
-    val borderEnd: Color,
-    val specularGlow: Color,
-    val orbPrimary: Color,
-    val orbSecondary: Color,
-    val orbTertiary: Color
-)
-
-val LocalGlassPalette = staticCompositionLocalOf {
-    GlassPalette(
-        isDark = true,
-        surfaceTop = Color(0x40FFFFFF),
-        surfaceBottom = Color(0x18FFFFFF),
-        borderStart = Color(0x66FFFFFF),
-        borderEnd = Color(0x14FFFFFF),
-        specularGlow = Color(0x28FFFFFF),
-        orbPrimary = Color(0xFF38BDF8),
-        orbSecondary = Color(0xFF818CF8),
-        orbTertiary = Color(0xFF2DD4BF)
-    )
+data class KaruiPalette(
+    val key: String,
+    val bg: Color,
+    val surface: Color,
+    val border: Color,
+    val text: Color,
+    val accent: Color,
+    val accentTxt: Color,
+    val gray: Color
+) {
+    val isDark: Boolean get() = bg.luminance() < 0.5f
 }
 
-private val FallbackDarkScheme = darkColorScheme(
-    primary = Color(0xFF7DD3FC),
-    onPrimary = Color(0xFF003549),
-    primaryContainer = Color(0xFF004D68),
-    secondary = Color(0xFFA5B4FC),
-    tertiary = Color(0xFF5EEAD4),
-    background = Color(0xFF070B14),
-    surface = Color(0xFF0B1220),
-    surfaceContainerHigh = Color(0xFF131D31)
+val KaruiThemes: List<KaruiPalette> = listOf(
+    KaruiPalette("gruvbox", Color(0xFF282828), Color(0xFF3C3836), Color(0xFFD79921), Color(0xFFEBDBB2), Color(0xFFFABD2F), Color(0xFF282828), Color(0xFF928374)),
+    KaruiPalette("gruvbox-material", Color(0xFF282828), Color(0xFF32302F), Color(0xFF6B6259), Color(0xFFDDC7A1), Color(0xFFA9B665), Color(0xFF282828), Color(0xFF928374)),
+    KaruiPalette("gruvbox-light", Color(0xFFFBF1C7), Color(0xFFF2E5BC), Color(0xFFBDAE93), Color(0xFF3C3836), Color(0xFFD65D0E), Color(0xFFFBF1C7), Color(0xFF928374)),
+    KaruiPalette("catppuccin", Color(0xFF1E1E2E), Color(0xFF313244), Color(0xFFCBA6F7), Color(0xFFCDD6F4), Color(0xFFCBA6F7), Color(0xFF11111B), Color(0xFF6C7086)),
+    KaruiPalette("catppuccin-frappe", Color(0xFF303446), Color(0xFF414559), Color(0xFFCA9EE6), Color(0xFFC6D0F5), Color(0xFFCA9EE6), Color(0xFF232634), Color(0xFF737994)),
+    KaruiPalette("tokyo-night", Color(0xFF1A1B26), Color(0xFF24283C), Color(0xFF7AA2F7), Color(0xFFA9B1D6), Color(0xFF7AA2F7), Color(0xFF1D202F), Color(0xFF565F89)),
+    KaruiPalette("nord", Color(0xFF2E3440), Color(0xFF3B4252), Color(0xFF88C0D0), Color(0xFFECEFF4), Color(0xFF88C0D0), Color(0xFF2E3440), Color(0xFF616E88)),
+    KaruiPalette("everforest", Color(0xFF2D353B), Color(0xFF3D484D), Color(0xFFA7C080), Color(0xFFD3C6AA), Color(0xFFA7C080), Color(0xFF232A2E), Color(0xFF859289)),
+    KaruiPalette("everforest-light", Color(0xFFFDF6E3), Color(0xFFEEE8D5), Color(0xFF859900), Color(0xFF586E75), Color(0xFF859900), Color(0xFFFDF6E3), Color(0xFF93A1A1)),
+    KaruiPalette("rose-pine", Color(0xFF191724), Color(0xFF1F1D2E), Color(0xFF524F67), Color(0xFFE0DEF4), Color(0xFFEBBCBA), Color(0xFF191724), Color(0xFF6E6A86)),
+    KaruiPalette("monokai", Color(0xFF272822), Color(0xFF3E3D32), Color(0xFFF92672), Color(0xFFF8F8F2), Color(0xFFFD971F), Color(0xFF272822), Color(0xFFA6E22E)),
+    KaruiPalette("monokai-pro", Color(0xFF2D2A2E), Color(0xFF403E41), Color(0xFF5B595C), Color(0xFFFCFCFA), Color(0xFFFFD866), Color(0xFF2D2A2E), Color(0xFF727072)),
+    KaruiPalette("sol-dark", Color(0xFF002B36), Color(0xFF073642), Color(0xFF2AA198), Color(0xFFEEE8D5), Color(0xFFB58900), Color(0xFF002B36), Color(0xFF586E75)),
+    KaruiPalette("sol-light", Color(0xFFFDF6E3), Color(0xFFEEE8D5), Color(0xFF93A1A1), Color(0xFF657B83), Color(0xFF268BD2), Color(0xFFFDF6E3), Color(0xFF93A1A1)),
+    KaruiPalette("zenburn", Color(0xFF3F3F3F), Color(0xFF4A4A4A), Color(0xFF6B6B6B), Color(0xFFDCDCCC), Color(0xFFF0DFAF), Color(0xFF3F3F3F), Color(0xFF7F7F7F)),
+    KaruiPalette("crt-amber", Color(0xFF1A0F00), Color(0xFF2B1A00), Color(0xFFFFB000), Color(0xFFFFB000), Color(0xFFFFCC44), Color(0xFF1A0F00), Color(0xFF8A5A00)),
+    KaruiPalette("sepia-terminal", Color(0xFF1A1408), Color(0xFF2A2010), Color(0xFF8A7A3A), Color(0xFFD4C890), Color(0xFFF0E0A0), Color(0xFF1A1408), Color(0xFF6A5F30)),
+    KaruiPalette("charcoal", Color(0xFF1C1C1E), Color(0xFF2A2A2D), Color(0xFF4A4A4E), Color(0xFFE5E5E7), Color(0xFFA1A1A6), Color(0xFF1C1C1E), Color(0xFF6E6E73)),
+    KaruiPalette("amoled", Color(0xFF000000), Color(0xFF121212), Color(0xFFFFFFFF), Color(0xFFFFFFFF), Color(0xFFFFFFFF), Color(0xFF000000), Color(0xFF888888)),
+    KaruiPalette("purple", Color(0xFFFFFFFF), Color(0xFFF5F5F5), Color(0xFF8E24AA), Color(0xFF333333), Color(0xFF8E24AA), Color(0xFFFFFFFF), Color(0xFF888888)),
+    KaruiPalette("paper", Color(0xFFF2EDE3), Color(0xFFE6DFD1), Color(0xFF8A7A5C), Color(0xFF2B2B28), Color(0xFFB04A3A), Color(0xFFF2EDE3), Color(0xFFA49A86)),
+    KaruiPalette("papercolor-light", Color(0xFFEEEEEE), Color(0xFFE4E4E4), Color(0xFFA8A8A8), Color(0xFF444444), Color(0xFF0087AF), Color(0xFFFFFFFF), Color(0xFF878787)),
+    KaruiPalette("sepia", Color(0xFFF4ECD8), Color(0xFFEBE0C7), Color(0xFFB09B73), Color(0xFF3D3325), Color(0xFFA0622B), Color(0xFFF4ECD8), Color(0xFF8A7A5F)),
+    KaruiPalette("slate", Color(0xFFF8FAFC), Color(0xFFEEF2F6), Color(0xFFA8B6C8), Color(0xFF1E293B), Color(0xFF475569), Color(0xFFF8FAFC), Color(0xFF7B8794)),
+    KaruiPalette("newsprint", Color(0xFFF5F3EE), Color(0xFFEBE8E1), Color(0xFFB8B3A8), Color(0xFF1A1A1A), Color(0xFF1A1A1A), Color(0xFFF5F3EE), Color(0xFF7A776F))
 )
 
-private val FallbackLightScheme = lightColorScheme(
-    primary = Color(0xFF0284C7),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFE0F2FE),
-    secondary = Color(0xFF4F46E5),
-    tertiary = Color(0xFF0D9488),
-    background = Color(0xFFF0F6FF),
-    surface = Color(0xFFF8FAFC),
-    surfaceContainerHigh = Color(0xFFE2ECF8)
+fun findKaruiPalette(key: String): KaruiPalette =
+    KaruiThemes.find { it.key == key } ?: KaruiThemes.first()
+
+val LocalKaruiPalette = staticCompositionLocalOf { KaruiThemes.first() }
+val LocalUiScale = staticCompositionLocalOf { 1.0f }
+
+private val KaruiShapes = Shapes(
+    extraSmall = RoundedCornerShape(0.dp),
+    small = RoundedCornerShape(0.dp),
+    medium = RoundedCornerShape(0.dp),
+    large = RoundedCornerShape(0.dp),
+    extraLarge = RoundedCornerShape(0.dp)
 )
 
 @Composable
 fun LocGuardTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeName: String = "gruvbox",
+    uiScale: Float = 1.0f,
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
-    val colorScheme: ColorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val palette = findKaruiPalette(themeName)
+
+    val colorScheme = if (palette.isDark) {
+        darkColorScheme(
+            primary = palette.accent,
+            onPrimary = palette.accentTxt,
+            primaryContainer = palette.surface,
+            onPrimaryContainer = palette.accent,
+            secondary = palette.border,
+            onSecondary = palette.accentTxt,
+            tertiary = palette.accent,
+            background = palette.bg,
+            onBackground = palette.text,
+            surface = palette.surface,
+            onSurface = palette.text,
+            surfaceVariant = palette.surface,
+            onSurfaceVariant = palette.gray,
+            outline = palette.border,
+            outlineVariant = palette.border,
+            error = Color(0xFFEF5350),
+            errorContainer = Color(0xFF5F1D1D),
+            onErrorContainer = Color(0xFFFFDAD6)
+        )
     } else {
-        if (darkTheme) FallbackDarkScheme else FallbackLightScheme
+        lightColorScheme(
+            primary = palette.accent,
+            onPrimary = palette.accentTxt,
+            primaryContainer = palette.surface,
+            onPrimaryContainer = palette.accent,
+            secondary = palette.border,
+            onSecondary = palette.accentTxt,
+            tertiary = palette.accent,
+            background = palette.bg,
+            onBackground = palette.text,
+            surface = palette.surface,
+            onSurface = palette.text,
+            surfaceVariant = palette.surface,
+            onSurfaceVariant = palette.gray,
+            outline = palette.border,
+            outlineVariant = palette.border,
+            error = Color(0xFFB3261E),
+            errorContainer = Color(0xFFF9DEDC),
+            onErrorContainer = Color(0xFF410E0B)
+        )
     }
 
-    val radiantPrimary = lerp(colorScheme.primary, Color(0xFF38BDF8), 0.35f)
-    val radiantSecondary = lerp(colorScheme.secondary, Color(0xFFA855F7), 0.38f)
-    val radiantTertiary = lerp(colorScheme.tertiary, Color(0xFF2DD4BF), 0.40f)
-
-    val glassPalette = if (darkTheme) {
-        GlassPalette(
-            isDark = true,
-            surfaceTop = colorScheme.surfaceContainerHigh.copy(alpha = 0.58f),
-            surfaceBottom = colorScheme.surface.copy(alpha = 0.36f),
-            borderStart = radiantPrimary.copy(alpha = 0.48f),
-            borderEnd = radiantSecondary.copy(alpha = 0.22f),
-            specularGlow = Color.White.copy(alpha = 0.24f),
-            orbPrimary = radiantPrimary,
-            orbSecondary = radiantSecondary,
-            orbTertiary = radiantTertiary
-        )
-    } else {
-        GlassPalette(
-            isDark = false,
-            surfaceTop = Color.White.copy(alpha = 0.78f),
-            surfaceBottom = colorScheme.surfaceContainerHigh.copy(alpha = 0.54f),
-            borderStart = Color.White.copy(alpha = 0.92f),
-            borderEnd = radiantPrimary.copy(alpha = 0.32f),
-            specularGlow = radiantSecondary.copy(alpha = 0.18f),
-            orbPrimary = radiantPrimary,
-            orbSecondary = radiantSecondary,
-            orbTertiary = radiantTertiary
-        )
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                val controller = WindowCompat.getInsetsController(window, view)
+                controller.isAppearanceLightStatusBars = !palette.isDark
+                controller.isAppearanceLightNavigationBars = !palette.isDark
+            }
+        }
     }
 
     CompositionLocalProvider(
-        LocalGlassPalette provides glassPalette,
-        LocalContentColor provides colorScheme.onBackground
+        LocalKaruiPalette provides palette,
+        LocalUiScale provides uiScale,
+        LocalContentColor provides palette.text
     ) {
         MaterialTheme(
-            colorScheme = colorScheme
+            colorScheme = colorScheme,
+            shapes = KaruiShapes
         ) {
-            CompositionLocalProvider(LocalContentColor provides colorScheme.onBackground) {
+            CompositionLocalProvider(LocalContentColor provides palette.text) {
                 content()
             }
         }

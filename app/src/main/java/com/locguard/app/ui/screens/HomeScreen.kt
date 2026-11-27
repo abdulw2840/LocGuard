@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,47 +20,37 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.BatteryChargingFull
-import androidx.compose.material.icons.rounded.Bolt
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.GpsOff
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Security
-import androidx.compose.material.icons.rounded.WarningAmber
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.locguard.app.data.GuardSettings
 import com.locguard.app.data.PrivilegePreference
 import com.locguard.app.monitor.GuardPhase
 import com.locguard.app.monitor.GuardRuntimeState
 import com.locguard.app.privilege.ActiveBackend
 import com.locguard.app.privilege.PrivilegeStatus
-import com.locguard.app.ui.components.LiquidGlassCard
-import com.locguard.app.ui.components.LiquidStatusOrb
+import com.locguard.app.ui.components.KaruiBox
+import com.locguard.app.ui.components.KaruiButton
+import com.locguard.app.ui.components.KaruiChip
+import com.locguard.app.ui.components.KaruiDashedDivider
+import com.locguard.app.ui.components.KaruiStatusHero
+import com.locguard.app.ui.components.KaruiSubtleButton
+import com.locguard.app.ui.components.KaruiSwitch
+import com.locguard.app.ui.theme.LocalKaruiPalette
+import com.locguard.app.ui.theme.LocalUiScale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -82,177 +73,156 @@ fun HomeScreen(
     contentPadding: PaddingValues
 ) {
     val haptic = LocalHapticFeedback.current
+    val palette = LocalKaruiPalette.current
+    val scale = LocalUiScale.current
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            top = contentPadding.calculateTopPadding() + 12.dp,
-            bottom = contentPadding.calculateBottomPadding() + 96.dp,
+            top = contentPadding.calculateTopPadding() + 8.dp,
+            bottom = contentPadding.calculateBottomPadding() + 32.dp,
             start = 16.dp,
             end = 16.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Header
         item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
-            ) {
-                Text(
-                    text = "LocGuard",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "${settings.whitelistedPackages.size} whitelisted apps • ${settings.autoDisableCount} auto-offs",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = "${settings.whitelistedPackages.size} whitelisted apps • ${settings.autoDisableCount} auto-offs",
+                color = palette.gray,
+                fontFamily = FontFamily.Monospace,
+                fontSize = (12 * scale).sp,
+                modifier = Modifier.padding(horizontal = 2.dp)
+            )
         }
 
-        // Hero Liquid Status Orb Card
+        // Status Box
         item {
-            LiquidGlassCard {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            KaruiBox(title = "Guard Status") {
+                KaruiStatusHero(state = runtimeState)
+
+                Spacer(modifier = Modifier.height(12.dp))
+                KaruiDashedDivider()
+                Spacer(modifier = Modifier.height(10.dp))
+
+                SettingToggleRow(
+                    title = "Enable Location Guard",
+                    subtitle = "Monitor foreground apps and auto-shutoff GPS",
+                    checked = settings.guardEnabled,
+                    onCheckedChange = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onToggleGuard(it)
+                    }
+                )
+
+                AnimatedVisibility(
+                    visible = runtimeState.isLocationEnabled,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
                 ) {
-                    LiquidStatusOrb(state = runtimeState)
-
-                    AnimatedVisibility(
-                        visible = runtimeState.isLocationEnabled,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 14.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
-                        ) {
-                            Button(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onTurnOffNow()
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                                ),
-                                shape = RoundedCornerShape(18.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.GpsOff,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Turn Off Now")
-                            }
+                        KaruiButton(
+                            text = "Turn Off Now",
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onTurnOffNow()
+                            },
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.weight(1f)
+                        )
 
-                            if (runtimeState.phase == GuardPhase.COUNTING_DOWN) {
-                                FilledTonalButton(
-                                    onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        onExtendTimer()
-                                    },
-                                    shape = RoundedCornerShape(18.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Add,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("+1m")
+                        if (runtimeState.phase == GuardPhase.COUNTING_DOWN) {
+                            KaruiSubtleButton(
+                                text = "+1m",
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onExtendTimer()
                                 }
-                            }
+                            )
                         }
                     }
                 }
             }
         }
 
-        // Privilege & Battery Efficiency Card
+        // Privilege & Battery Engine Box
         item {
-            LiquidGlassCard {
+            KaruiBox(title = "Privilege & Battery Engine") {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Rounded.Security,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Privilege & Battery Engine",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                        )
-                    }
-                    IconButton(onClick = onRefreshPrivileges) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
-                    }
+                    Text(
+                        text = "Backend Diagnostics",
+                        color = palette.text,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = (14 * scale).sp
+                    )
+                    KaruiSubtleButton(
+                        text = "Refresh",
+                        onClick = onRefreshPrivileges
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                StatusPillRow(
+                StatusRow(
                     label = "Active Backend",
                     value = privilegeStatus.activeBackend.displayName,
                     isHealthy = privilegeStatus.activeBackend != ActiveBackend.NONE
                 )
-                StatusPillRow(
+                StatusRow(
                     label = "Root (KSU / Magisk)",
-                    value = if (privilegeStatus.isRootAvailable) "Granted" else "Not Detected",
+                    value = if (privilegeStatus.isRootAvailable) "GRANTED" else "NONE",
                     isHealthy = privilegeStatus.isRootAvailable
                 )
-                StatusPillRow(
+                StatusRow(
                     label = "Shizuku",
                     value = when {
-                        privilegeStatus.isShizukuServiceBound -> "Bound & Ready"
-                        privilegeStatus.isShizukuBinderAlive && !privilegeStatus.isShizukuPermissionGranted -> "Tap to Authorize"
-                        privilegeStatus.isShizukuBinderAlive -> "Connecting..."
-                        else -> "Not Running"
+                        privilegeStatus.isShizukuServiceBound -> "READY"
+                        privilegeStatus.isShizukuBinderAlive && !privilegeStatus.isShizukuPermissionGranted -> "AUTHORIZE"
+                        privilegeStatus.isShizukuBinderAlive -> "CONNECTING"
+                        else -> "OFFLINE"
                     },
                     isHealthy = privilegeStatus.isShizukuServiceBound,
                     onClick = if (privilegeStatus.isShizukuBinderAlive && !privilegeStatus.isShizukuPermissionGranted) {
                         onRequestShizuku
                     } else null
                 )
-                StatusPillRow(
+                StatusRow(
                     label = "UsageStats Access",
-                    value = if (privilegeStatus.hasUsageStatsPermission) "Granted" else "Missing",
+                    value = if (privilegeStatus.hasUsageStatsPermission) "GRANTED" else "MISSING",
                     isHealthy = privilegeStatus.hasUsageStatsPermission
                 )
 
                 if (!privilegeStatus.hasUsageStatsPermission && privilegeStatus.activeBackend != ActiveBackend.NONE) {
                     Spacer(modifier = Modifier.height(10.dp))
-                    FilledTonalButton(
+                    KaruiButton(
+                        text = "Auto-Grant via ${privilegeStatus.activeBackend.displayName}",
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onAutoGrantPermissions()
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Icon(Icons.Rounded.Bolt, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Auto-Grant Permissions via ${privilegeStatus.activeBackend.displayName}")
-                    }
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
+                KaruiDashedDivider()
+                Spacer(modifier = Modifier.height(10.dp))
+
                 Text(
-                    text = "Privilege Method",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "PRIVILEGE METHOD",
+                    color = palette.gray,
+                    fontSize = (11 * scale).sp,
+                    fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 FlowRow(
@@ -260,37 +230,22 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     PrivilegePreference.entries.forEach { pref ->
-                        FilterChip(
+                        KaruiChip(
+                            label = pref.label,
                             selected = settings.privilegePreference == pref,
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 onPrivilegePrefChange(pref)
-                            },
-                            label = { Text(pref.label) }
+                            }
                         )
                     }
                 }
             }
         }
 
-        // Timeout & Automation Behavior Card
+        // Timeout & Automation Behavior Box
         item {
-            LiquidGlassCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Rounded.BatteryChargingFull,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Automation & Timeout",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
+            KaruiBox(title = "Automation & Timeout") {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -298,12 +253,16 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "Auto-Off Delay",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        color = palette.text,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = (15 * scale).sp
                     )
                     Text(
                         text = formatDuration(settings.timeoutSeconds),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
+                        color = palette.accent,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = (16 * scale).sp
                     )
                 }
 
@@ -311,33 +270,37 @@ fun HomeScreen(
                     value = settings.timeoutSeconds.toFloat(),
                     onValueChange = { onTimeoutChange(it.toInt()) },
                     valueRange = 5f..600f,
-                    steps = 0
+                    colors = SliderDefaults.colors(
+                        thumbColor = palette.accent,
+                        activeTrackColor = palette.accent,
+                        inactiveTrackColor = palette.surface
+                    )
                 )
 
                 val presets = listOf(15, 30, 60, 120, 300)
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     presets.forEach { sec ->
-                        FilterChip(
+                        KaruiChip(
+                            label = formatDuration(sec),
                             selected = settings.timeoutSeconds == sec,
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 onTimeoutChange(sec)
-                            },
-                            label = { Text(formatDuration(sec)) }
+                            }
                         )
                     }
                 }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
+                KaruiDashedDivider()
+                Spacer(modifier = Modifier.height(10.dp))
 
                 SettingToggleRow(
                     title = "Auto-Enable for Whitelisted Apps",
-                    subtitle = "Automatically turn Location ON when opening a whitelisted app",
+                    subtitle = "Turn Location ON when opening a whitelisted app",
                     checked = settings.autoEnableForWhitelisted,
                     onCheckedChange = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -346,10 +309,12 @@ fun HomeScreen(
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
+                KaruiDashedDivider()
+                Spacer(modifier = Modifier.height(10.dp))
 
                 SettingToggleRow(
                     title = "Auto-Off on Screen Off",
-                    subtitle = "Pause normal timer & close location after screen locks",
+                    subtitle = "Pause normal timer & close location after lock",
                     checked = settings.autoDisableOnScreenOff,
                     onCheckedChange = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -370,41 +335,54 @@ fun HomeScreen(
                         ) {
                             Text(
                                 text = "Screen-Off Delay",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                color = palette.text,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = (14 * scale).sp
                             )
                             Text(
                                 text = formatDuration(settings.screenOffGraceSeconds),
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
+                                color = palette.accent,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = (14 * scale).sp
                             )
                         }
                         Slider(
                             value = settings.screenOffGraceSeconds.toFloat(),
                             onValueChange = { onScreenOffGraceChange(it.toInt()) },
                             valueRange = 5f..120f,
-                            steps = 0
+                            colors = SliderDefaults.colors(
+                                thumbColor = palette.accent,
+                                activeTrackColor = palette.accent,
+                                inactiveTrackColor = palette.surface
+                            )
                         )
                         val screenPresets = listOf(5, 15, 30, 60)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
                             screenPresets.forEach { sec ->
-                                FilterChip(
+                                KaruiChip(
+                                    label = formatDuration(sec),
                                     selected = settings.screenOffGraceSeconds == sec,
                                     onClick = {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         onScreenOffGraceChange(sec)
-                                    },
-                                    label = { Text(formatDuration(sec)) }
+                                    }
                                 )
                             }
                         }
                     }
                 }
 
+                Spacer(modifier = Modifier.height(12.dp))
+                KaruiDashedDivider()
                 Spacer(modifier = Modifier.height(10.dp))
 
                 SettingToggleRow(
                     title = "Live Countdown Notification",
-                    subtitle = "Show remaining seconds with quick Turn Off & +1m actions",
+                    subtitle = "Show remaining seconds with Turn Off & +1m",
                     checked = settings.showCountdownNotification,
                     onCheckedChange = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -417,47 +395,40 @@ fun HomeScreen(
 }
 
 @Composable
-private fun StatusPillRow(
+private fun StatusRow(
     label: String,
     value: String,
     isHealthy: Boolean,
     onClick: (() -> Unit)? = null
 ) {
+    val palette = LocalKaruiPalette.current
+    val scale = LocalUiScale.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
-            .padding(vertical = 6.dp, horizontal = 4.dp),
+            .padding(vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = palette.text.copy(alpha = 0.85f),
+            fontSize = (13 * scale).sp
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
             modifier = Modifier
-                .clip(CircleShape)
-                .background(
-                    if (isHealthy) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
-                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
-                )
-                .padding(horizontal = 10.dp, vertical = 4.dp)
+                .background(if (isHealthy) palette.accent else palette.surface)
+                .border(1.dp, palette.border, RectangleShape)
+                .padding(horizontal = 8.dp, vertical = 3.dp)
         ) {
-            Icon(
-                imageVector = if (isHealthy) Icons.Rounded.CheckCircle else Icons.Rounded.WarningAmber,
-                contentDescription = null,
-                tint = if (isHealthy) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(14.dp)
-            )
-            Spacer(modifier = Modifier.width(5.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                color = if (isHealthy) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isHealthy) palette.accentTxt else palette.gray,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                fontSize = (11 * scale).sp
             )
         }
     }
@@ -470,6 +441,9 @@ private fun SettingToggleRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val palette = LocalKaruiPalette.current
+    val scale = LocalUiScale.current
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -478,15 +452,17 @@ private fun SettingToggleRow(
         Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                color = palette.text,
+                fontWeight = FontWeight.Medium,
+                fontSize = (14 * scale).sp
             )
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = palette.gray,
+                fontSize = (12 * scale).sp
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        KaruiSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

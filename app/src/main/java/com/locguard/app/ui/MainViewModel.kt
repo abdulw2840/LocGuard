@@ -131,6 +131,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         app.logRepository.clear()
     }
 
+    fun setThemeName(themeName: String) {
+        viewModelScope.launch { app.preferences.setThemeName(themeName) }
+    }
+
+    fun setUiScale(scale: Float) {
+        viewModelScope.launch { app.preferences.setUiScale(scale) }
+    }
+
     private fun loadInstalledApps() {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoadingApps.value = true
