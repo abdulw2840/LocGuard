@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.locguard.app.service.LocationGuardService
 import com.locguard.app.ui.MainViewModel
-import com.locguard.app.ui.components.FloatingLocBuddy
 import com.locguard.app.ui.components.KaruiPivotHeader
 import com.locguard.app.ui.screens.AppsScreen
 import com.locguard.app.ui.screens.HomeScreen
@@ -162,7 +161,5 @@ private fun LocGuardRoot(viewModel: MainViewModel) {
             topInset = statusTop,
             modifier = Modifier.align(Alignment.TopCenter)
         )
-
-        FloatingLocBuddy(state = runtimeState)
     }
 }
